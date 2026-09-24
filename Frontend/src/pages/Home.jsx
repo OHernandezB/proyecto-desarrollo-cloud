@@ -2,34 +2,44 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchProductosAPI } from '../utils/api';
 import { ProductCard } from '../components/ProductCard';
-import { Sparkles, ArrowRight, Monitor, Keyboard, Mouse, Tv } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Sparkles, ArrowRight, Monitor, Keyboard, Mouse, Tv, Lock } from 'lucide-react';
 
 export const Home = ({ searchTerm }) => {
+  const { isAuthenticated, isLoading } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchProductosAPI().then((data) => {
-      setProducts(data);
+    if (isLoading) return;
+    if (!isAuthenticated) {
       setLoading(false);
-    });
-  }, []);
+      return;
+    }
+    fetchProductosAPI()
+      .then(setProducts)
+      .catch((e) => setError(`${e.status ?? ''} ${e.message}`))
+      .finally(() => setLoading(false));
+  }, [isAuthenticated, isLoading]);
 
+  const term = searchTerm?.toLowerCase();
   const filteredProducts = products.filter((p) =>
-    searchTerm
-      ? p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.categoria.toLowerCase().includes(searchTerm.toLowerCase())
-      : true
+    term ? p.nombre.toLowerCase().includes(term) || (p.categoria || '').toLowerCase().includes(term) : true
   );
+
+  const categorias = [
+    { cat: 'Teclados', label: 'Teclados Mecánicos', Icon: Keyboard, color: '#00f2fe' },
+    { cat: 'Pantallas', label: 'Pantallas & Monitores', Icon: Tv, color: '#7f00ff' },
+    { cat: 'Periféricos', label: 'Mouse & Audio', Icon: Mouse, color: '#f107a3' },
+    { cat: 'Muebles Gamer', label: 'Sillas & Escritorios', Icon: Monitor, color: '#00f2fe' },
+  ];
 
   return (
     <div className="w-full space-y-14 md:space-y-20">
-      
-      {/* Hero Banner Gamer */}
+
       <section className="relative glass-card p-8 sm:p-12 md:p-14 overflow-hidden border-cyan-500/20 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center w-full">
-          
-          {/* Texto e Información Hero */}
           <div className="lg:col-span-7 space-y-6 z-10">
             <div className="inline-flex items-center gap-2 badge-neon">
               <Sparkles className="w-3.5 h-3.5" /> Equipamiento de Alto Rendimiento
@@ -47,7 +57,6 @@ export const Home = ({ searchTerm }) => {
             </div>
           </div>
 
-          {/* Previsualización Producto Hero */}
           <div className="lg:col-span-5 relative flex justify-center w-full">
             <div className="relative w-full aspect-video lg:aspect-[4/3] max-h-[380px] overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-[#00f2fe]/20">
               <img
@@ -57,47 +66,25 @@ export const Home = ({ searchTerm }) => {
               />
             </div>
           </div>
-
         </div>
       </section>
 
-      {/* Categorías Principales */}
       <section className="space-y-6 w-full">
         <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
           Categorías <span className="text-[#00f2fe]">Destacadas</span>
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
-          <Link to="/catalogo?cat=Teclados" className="glass-card p-6 flex flex-col items-center gap-4 text-center hover:border-[#00f2fe] group">
-            <div className="p-4 rounded-2xl bg-[#00f2fe]/10 text-[#00f2fe] group-hover:scale-110 transition-transform">
-              <Keyboard className="w-8 h-8" />
-            </div>
-            <span className="font-bold text-sm sm:text-base text-white">Teclados Mecánicos</span>
-          </Link>
-          
-          <Link to="/catalogo?cat=Pantallas" className="glass-card p-6 flex flex-col items-center gap-4 text-center hover:border-[#00f2fe] group">
-            <div className="p-4 rounded-2xl bg-[#7f00ff]/10 text-[#7f00ff] group-hover:scale-110 transition-transform">
-              <Tv className="w-8 h-8" />
-            </div>
-            <span className="font-bold text-sm sm:text-base text-white">Pantallas & Monitores</span>
-          </Link>
-
-          <Link to="/catalogo?cat=Periféricos" className="glass-card p-6 flex flex-col items-center gap-4 text-center hover:border-[#00f2fe] group">
-            <div className="p-4 rounded-2xl bg-[#f107a3]/10 text-[#f107a3] group-hover:scale-110 transition-transform">
-              <Mouse className="w-8 h-8" />
-            </div>
-            <span className="font-bold text-sm sm:text-base text-white">Mouse & Audio</span>
-          </Link>
-
-          <Link to="/catalogo?cat=Muebles Gamer" className="glass-card p-6 flex flex-col items-center gap-4 text-center hover:border-[#00f2fe] group">
-            <div className="p-4 rounded-2xl bg-[#00f2fe]/10 text-[#00f2fe] group-hover:scale-110 transition-transform">
-              <Monitor className="w-8 h-8" />
-            </div>
-            <span className="font-bold text-sm sm:text-base text-white">Sillas & Escritorios</span>
-          </Link>
+          {categorias.map(({ cat, label, Icon, color }) => (
+            <Link key={cat} to={`/catalogo?cat=${cat}`} className="glass-card p-6 flex flex-col items-center gap-4 text-center hover:border-[#00f2fe] group">
+              <div className="p-4 rounded-2xl group-hover:scale-110 transition-transform" style={{ backgroundColor: `${color}1a`, color }}>
+                <Icon className="w-8 h-8" />
+              </div>
+              <span className="font-bold text-sm sm:text-base text-white">{label}</span>
+            </Link>
+          ))}
         </div>
       </section>
 
-      {/* Productos Gamer - Cuadrícula Adaptable con Separación Generosa (gap-8) */}
       <section className="space-y-6 w-full">
         <div className="flex items-center justify-between">
           <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -108,8 +95,16 @@ export const Home = ({ searchTerm }) => {
           </Link>
         </div>
 
-        {loading ? (
+        {!isAuthenticated && !isLoading ? (
+          <div className="glass-card p-12 text-center space-y-4">
+            <Lock className="w-10 h-10 text-[#00f2fe] mx-auto" />
+            <p className="text-sm text-slate-300">Inicia sesión para ver los productos.</p>
+            <Link to="/login" className="btn-gamer-primary inline-flex">Ingresar</Link>
+          </div>
+        ) : loading ? (
           <div className="text-center py-12 text-slate-400">Cargando productos gamer...</div>
+        ) : error ? (
+          <div className="glass-card p-12 text-center text-red-400 text-sm">{error}</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 gap-8 w-full">
             {filteredProducts.map((prod) => (

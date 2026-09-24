@@ -1,17 +1,17 @@
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Gamepad2, User, LogOut, Search } from 'lucide-react';
+import { ShoppingBag, Gamepad2, User, LogOut, Search, ShieldCheck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { ROLES } from '../auth/msalConfig';
 
 export const Navbar = ({ searchTerm, setSearchTerm }) => {
   const { totalItems } = useCart();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, hasRole } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090a10]/90 border-b border-white/10 w-full py-4">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-3 flex items-center justify-between gap-4 md:gap-8">
-        
-        {/* Logo Gamer */}
+
         <Link to="/" className="flex items-center gap-3 shrink-0 group">
           <div className="p-2.5 rounded-xl bg-gradient-to-tr from-[#00f2fe] to-[#7f00ff] text-black shadow-lg shadow-[#00f2fe]/30 group-hover:scale-105 transition-transform">
             <Gamepad2 className="w-6 h-6 stroke-[2.5]" />
@@ -21,7 +21,6 @@ export const Navbar = ({ searchTerm, setSearchTerm }) => {
           </span>
         </Link>
 
-        {/* Buscador Integrado */}
         <div className="flex-1 max-w-xl relative hidden md:block mx-4">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -33,7 +32,6 @@ export const Navbar = ({ searchTerm, setSearchTerm }) => {
           />
         </div>
 
-        {/* Links de Navegación y Acciones */}
         <nav className="flex items-center gap-4 sm:gap-6 shrink-0">
           <Link to="/" className="text-sm font-semibold hover:text-[#00f2fe] transition-colors hidden sm:inline">
             Inicio
@@ -41,8 +39,12 @@ export const Navbar = ({ searchTerm, setSearchTerm }) => {
           <Link to="/catalogo" className="text-sm font-semibold hover:text-[#00f2fe] transition-colors">
             Catálogo
           </Link>
+          {hasRole(ROLES.ADMIN) && (
+            <Link to="/admin" className="text-sm font-semibold text-[#7f00ff] hover:text-[#00f2fe] transition-colors flex items-center gap-1">
+              <ShieldCheck className="w-4 h-4" /> Admin
+            </Link>
+          )}
 
-          {/* Carrito Icon con Badge */}
           <Link to="/carrito" className="relative p-2.5 bg-[#121622] border border-white/10 rounded-xl hover:border-[#00f2fe] hover:text-[#00f2fe] transition-all">
             <ShoppingBag className="w-5 h-5" />
             {totalItems > 0 && (
@@ -52,12 +54,11 @@ export const Navbar = ({ searchTerm, setSearchTerm }) => {
             )}
           </Link>
 
-          {/* Autenticación Usuario */}
           {isAuthenticated ? (
             <div className="flex items-center gap-3 bg-[#121622] border border-white/10 rounded-xl px-3.5 py-1.5">
-              <span className="text-xs font-semibold text-[#00f2fe] truncate max-w-[120px]">
-                {user.nombre}
-              </span>
+              <Link to="/perfil" className="text-xs font-semibold text-[#00f2fe] truncate max-w-[120px] hover:underline">
+                {user?.nombre}
+              </Link>
               <button
                 onClick={logout}
                 className="p-1 text-slate-400 hover:text-red-400 transition-colors"

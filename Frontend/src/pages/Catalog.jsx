@@ -7,24 +7,26 @@ import { CategoryFilter } from '../components/CategoryFilter';
 export const Catalog = ({ searchTerm }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchParams] = useSearchParams();
-  const initialCategory = searchParams.get('cat') || 'Todas';
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('cat') || 'Todas');
 
   useEffect(() => {
-    fetchProductosAPI().then((data) => {
-      setProducts(data);
-      setLoading(false);
-    });
+    fetchProductosAPI()
+      .then(setProducts)
+      .catch((e) => setError(`${e.status ?? ''} ${e.message}`))
+      .finally(() => setLoading(false));
   }, []);
 
   const categories = ['Todas', 'Teclados', 'Periféricos', 'Pantallas', 'Muebles Gamer'];
 
   const filtered = products.filter((p) => {
     const matchesCat = selectedCategory === 'Todas' || p.categoria === selectedCategory;
-    const matchesSearch = !searchTerm ||
-      p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm?.toLowerCase();
+    const matchesSearch =
+      !term ||
+      p.nombre.toLowerCase().includes(term) ||
+      (p.descripcion || '').toLowerCase().includes(term);
     return matchesCat && matchesSearch;
   });
 
@@ -47,6 +49,10 @@ export const Catalog = ({ searchTerm }) => {
 
       {loading ? (
         <div className="text-center py-12 text-slate-400">Cargando catálogo...</div>
+      ) : error ? (
+        <div className="glass-card p-12 text-center text-red-400 text-sm">
+          No se pudo cargar el catálogo: {error}
+        </div>
       ) : filtered.length === 0 ? (
         <div className="glass-card p-12 text-center text-slate-400">
           No se encontraron productos en esta categoría o búsqueda.
