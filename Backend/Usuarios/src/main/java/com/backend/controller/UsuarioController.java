@@ -4,9 +4,9 @@ import com.backend.dto.UsuarioRequest;
 import com.backend.dto.UsuarioResponse;
 import com.backend.service.UsuarioService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,14 +19,26 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/usuarios")
-@CrossOrigin(origins = "*")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
-    @Autowired
     public UsuarioController(UsuarioService usuarioService) {
         this.usuarioService = usuarioService;
+    }
+
+    /** Perfil del usuario autenticado. Los datos salen del token validado, no del body. */
+    @GetMapping("/me")
+    public ResponseEntity<UsuarioResponse> miPerfil(@AuthenticationPrincipal Jwt jwt) {
+        String oid = primero(jwt.getClaimAsString("oid"), jwt.getSubject());
+        String nombre = primero(jwt.getClaimAsString("name"), "Usuario");
+        String email = primero(jwt.getClaimAsString("email"),
+                jwt.getClaimAsString("preferred_username"),
+                jwt.getClaimAsString("upn"));
+        List<String> roles = jwt.getClaimAsStringList("roles");
+        String rol = (roles == null || roles.isEmpty()) ? "Sin rol" : String.join(",", roles);
+
+        return ResponseEntity.ok(usuarioService.sincronizar(oid, nombre, email, rol));
     }
 
     @GetMapping
@@ -41,14 +53,9 @@ public class UsuarioController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public ResponseEntity<UsuarioResponse> crear(@Valid @RequestBody UsuarioRequest request) {
-        UsuarioResponse nuevo = usuarioService.crear(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);
-    }
-
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioResponse> actualizar(@PathVariable Long id, @Valid @RequestBody UsuarioRequest request) {
+    public ResponseEntity<UsuarioResponse> actualizar(@PathVariable Long id,
+                                                      @Valid @RequestBody UsuarioRequest request) {
         return usuarioService.actualizar(id, request)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -56,9 +63,15 @@ public class UsuarioController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        if (usuarioService.eliminar(id)) {
-            return ResponseEntity.noContent().build();
+        return usuarioService.eliminar(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
+    }
+
+    private static String primero(String... valores) {
+        for (String v : valores) {
+            if (v != null && !v.isBlank()) return v;
         }
-        return ResponseEntity.notFound().build();
+        return null;
     }
 }

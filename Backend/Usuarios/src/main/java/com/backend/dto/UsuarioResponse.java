@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 public class UsuarioResponse {
 
     private Long id;
+    private String azureOid;
     private String nombre;
     private String email;
     private String rol;

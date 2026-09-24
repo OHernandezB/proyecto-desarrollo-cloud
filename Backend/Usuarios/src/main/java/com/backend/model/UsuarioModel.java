@@ -7,6 +7,8 @@ import lombok.*;
  * ==========================================
  * CAPA DE MODELO (MODEL - MVC)
  * ==========================================
+ * Entidad que representa la tabla 'usuarios'.
+ * La contraseña la gestiona Azure AD; aquí solo se guarda el perfil.
  */
 @Entity
 @Table(name = "usuarios")
@@ -20,15 +22,17 @@ public class UsuarioModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    /** Object ID del usuario en Azure AD (claim "oid"). */
+    @Column(name = "azure_oid", nullable = false, unique = true, length = 64)
+    private String azureOid;
+
+    @Column(nullable = false, length = 100)
     private String nombre;
 
-    @Column(nullable = false, unique = true)
+    @Column(length = 150)
     private String email;
 
-    @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false)
+    /** Roles vigentes según el último token (claim "roles"). */
+    @Column(nullable = false, length = 100)
     private String rol;
 }

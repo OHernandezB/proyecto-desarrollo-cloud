@@ -14,7 +14,5 @@ import java.util.Optional;
 @Repository
 public interface UsuarioRepository extends JpaRepository<UsuarioModel, Long> {
 
-    Optional<UsuarioModel> findByEmail(String email);
-
-    boolean existsByEmail(String email);
+    Optional<UsuarioModel> findByAzureOid(String azureOid);
 }
