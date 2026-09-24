@@ -7,7 +7,8 @@ import lombok.*;
  * ==========================================
  * CAPA DE MODELO (MODEL - MVC)
  * ==========================================
- * Clase entidad que representa la tabla 'productos' en la base de datos.
+ * Entidad que representa la tabla 'productos'.
+ * Cada producto pertenece a una categoría (FK categoria_id).
  */
 @Entity
 @Table(name = "productos")
@@ -21,10 +22,10 @@ public class ProductoModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
     private String nombre;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "text")
     private String descripcion;
 
     @Column(nullable = false)
@@ -33,7 +34,10 @@ public class ProductoModel {
     @Column(nullable = false)
     private Integer stock;
 
+    @Column(name = "imagen_url", length = 500)
     private String imagenUrl;
 
-    private String categoria;
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "categoria_id", nullable = false)
+    private CategoriaModel categoria;
 }

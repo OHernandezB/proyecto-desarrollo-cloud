@@ -33,5 +33,6 @@ public class ProductoRequest {
 
     private String imagenUrl;
 
+    @NotBlank(message = "La categoría es obligatoria")
     private String categoria;
 }

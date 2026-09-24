@@ -14,8 +14,8 @@ import java.util.List;
 @Repository
 public interface ProductoRepository extends JpaRepository<ProductoModel, Long> {
 
-    // Buscar productos por categoría
-    List<ProductoModel> findByCategoria(String categoria);
+    // Buscar productos por el nombre de su categoría
+    List<ProductoModel> findByCategoria_Nombre(String nombre);
 
     // Buscar productos cuyo nombre contenga el texto buscado
     List<ProductoModel> findByNombreContainingIgnoreCase(String nombre);

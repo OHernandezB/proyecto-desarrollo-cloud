@@ -2,14 +2,15 @@ package com.backend.service;
 
 import com.backend.dto.ProductoRequest;
 import com.backend.dto.ProductoResponse;
+import com.backend.model.CategoriaModel;
 import com.backend.model.ProductoModel;
+import com.backend.repository.CategoriaRepository;
 import com.backend.repository.ProductoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * ==========================================
@@ -20,36 +21,35 @@ import java.util.stream.Collectors;
 public class ProductoService {
 
     private final ProductoRepository productoRepository;
+    private final CategoriaRepository categoriaRepository;
 
-    @Autowired
-    public ProductoService(ProductoRepository productoRepository) {
+    public ProductoService(ProductoRepository productoRepository, CategoriaRepository categoriaRepository) {
         this.productoRepository = productoRepository;
+        this.categoriaRepository = categoriaRepository;
     }
 
     public List<ProductoResponse> obtenerTodos() {
-        return productoRepository.findAll().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return productoRepository.findAll().stream().map(this::mapToResponse).toList();
     }
 
     public Optional<ProductoResponse> obtenerPorId(Long id) {
         return productoRepository.findById(id).map(this::mapToResponse);
     }
 
+    @Transactional
     public ProductoResponse crear(ProductoRequest request) {
-        ProductoModel nuevoProducto = ProductoModel.builder()
+        ProductoModel nuevo = ProductoModel.builder()
                 .nombre(request.getNombre())
                 .descripcion(request.getDescripcion())
                 .precio(request.getPrecio())
                 .stock(request.getStock())
                 .imagenUrl(request.getImagenUrl())
-                .categoria(request.getCategoria())
+                .categoria(buscarCategoria(request.getCategoria()))
                 .build();
-
-        ProductoModel guardado = productoRepository.save(nuevoProducto);
-        return mapToResponse(guardado);
+        return mapToResponse(productoRepository.save(nuevo));
     }
 
+    @Transactional
     public Optional<ProductoResponse> actualizar(Long id, ProductoRequest request) {
         return productoRepository.findById(id).map(producto -> {
             producto.setNombre(request.getNombre());
@@ -57,12 +57,12 @@ public class ProductoService {
             producto.setPrecio(request.getPrecio());
             producto.setStock(request.getStock());
             producto.setImagenUrl(request.getImagenUrl());
-            producto.setCategoria(request.getCategoria());
-            ProductoModel actualizado = productoRepository.save(producto);
-            return mapToResponse(actualizado);
+            producto.setCategoria(buscarCategoria(request.getCategoria()));
+            return mapToResponse(productoRepository.save(producto));
         });
     }
 
+    @Transactional
     public boolean eliminar(Long id) {
         if (productoRepository.existsById(id)) {
             productoRepository.deleteById(id);
@@ -71,15 +71,20 @@ public class ProductoService {
         return false;
     }
 
-    private ProductoResponse mapToResponse(ProductoModel producto) {
+    private CategoriaModel buscarCategoria(String nombre) {
+        return categoriaRepository.findByNombre(nombre)
+                .orElseThrow(() -> new IllegalArgumentException("La categoría '" + nombre + "' no existe"));
+    }
+
+    private ProductoResponse mapToResponse(ProductoModel p) {
         return ProductoResponse.builder()
-                .id(producto.getId())
-                .nombre(producto.getNombre())
-                .descripcion(producto.getDescripcion())
-                .precio(producto.getPrecio())
-                .stock(producto.getStock())
-                .imagenUrl(producto.getImagenUrl())
-                .categoria(producto.getCategoria())
+                .id(p.getId())
+                .nombre(p.getNombre())
+                .descripcion(p.getDescripcion())
+                .precio(p.getPrecio())
+                .stock(p.getStock())
+                .imagenUrl(p.getImagenUrl())
+                .categoria(p.getCategoria().getNombre())
                 .build();
     }
 }
